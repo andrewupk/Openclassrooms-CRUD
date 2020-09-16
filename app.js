@@ -1,7 +1,21 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 
+const Thing = require('./models/thing');
+
+//mongo pw: wIPHTkVFdxaz1YB9
+//mongo conn: mongodb+srv://andrewupk:<password>@cluster0.pnlls.mongodb.net/<dbname>?retryWrites=true&w=majority
 const app = express();
+
+mongoose.connect('mongodb+srv://andrewupk:wIPHTkVFdxaz1YB9@cluster0.pnlls.mongodb.net/test?retryWrites=true&w=majority')
+    .then(() => {
+        console.log('Connected to mongodb');
+    })
+    .catch((err) => {
+        console.log('Connection error');
+        console.error(err);
+    });
 
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,30 +27,69 @@ app.use((req, res, next) => {
 app.use(bodyParser.json());
 
 app.post('/api/stuff', (req, res, next) => {
-    console.log(req.body);
-    res.status(201).json({
-        message: 'Thing created'
+    const thing = new Thing({
+        title: req.body.title,
+        description: req.body.description,
+        imageUrl: req.body.imageUrl,
+        price: req.body.price,
+        userId: req.body.userId
+    });
+    thing.save().then(() => {
+        res.status(201).json({message: 'Thing saved successfully'});
+    })
+    .catch((err) => {
+        res.status(400).json({err: err});
     });
 });
 
+app.get('/api/stuff/:id', (req, res, next) => {
+    Thing.findOne({
+        _id: req.params.id
+    }).then((thing) => {
+        res.status(200).json(thing);
+    }).catch((err) => {
+        res.status(400).json({err: err});
+    });
+});
+
+app.put('/api/stuff/:id', (req, res, next) => {
+    const thing = new Thing({
+        _id: req.params.id,
+        title: req.body.title,
+        description: req.body.description,
+        imageUrl: req.body.imageUrl,
+        price: req.body.price,
+        userId: req.body.userId
+    });
+    Thing.updateOne({_id: req.params.id}, thing).then(() => {
+        res.status(201).json({message: 'Successfull update'});
+    }).catch((err) => {
+        res.status(400).json({err: err});
+    });
+});
+
+app.delete('/api/stuff/:id', (req, res, next) => {
+    Thing.deleteOne({ _id: req.params.id }).then(
+        () => {
+            res.status(200).json({
+                message: 'Deleted!'
+            });
+        }
+    ).catch(
+        (err) => {
+            res.status(400).json({
+                err: err
+            });
+        }
+    );
+});
+
 app.use('/api/stuff', (req, res, next) => {
-    const stuff = [{
-        _id: 'fdfsd',
-        title: 'First thing',
-        description: 'Thing desc',
-        imageUrl: 'https://miro.medium.com/max/1200/1*mk1-6aYaf_Bes1E3Imhc0A.jpeg',
-        price: 4900,
-        userId: 'adfhksjf'
-    },
-    {
-        _id: 'vfdcvbgf',
-        title: 'Second thing',
-        description: 'Second thing desc',
-        imageUrl: 'https://p.bigstockphoto.com/GeFvQkBbSLaMdpKXF1Zv_bigstock-Aerial-View-Of-Blue-Lakes-And--227291596.jpg',
-        price: 2900,
-        userId: 'mnbvftyjknb'
-    }];
-    res.status(200).json(stuff);
+    Thing.find().then((things) => {
+        res.status(200).json(things);
+    }).catch((err) => {
+        res.status(400).json({err: err});
+    });
 });
 
 module.exports = app;
