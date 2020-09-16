@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
 const Thing = require('./models/thing');
+const Product = require('./models/product');
 
 //mongo pw: wIPHTkVFdxaz1YB9
 //mongo conn: mongodb+srv://andrewupk:<password>@cluster0.pnlls.mongodb.net/<dbname>?retryWrites=true&w=majority
@@ -42,11 +43,36 @@ app.post('/api/stuff', (req, res, next) => {
     });
 });
 
+app.post('/api/products', (req, res, next) => {
+    const product = new Product({
+        name: req.body.name,
+        description: req.body.description,
+        price: req.body.price,
+        inStock: req.body.inStock
+    });
+    product.save().then(() => {
+        res.status(201).json({product: product});
+    })
+    .catch((err) => {
+        res.status(400).json({err: err});
+    });
+});
+
 app.get('/api/stuff/:id', (req, res, next) => {
     Thing.findOne({
         _id: req.params.id
     }).then((thing) => {
         res.status(200).json(thing);
+    }).catch((err) => {
+        res.status(400).json({err: err});
+    });
+});
+
+app.get('/api/products/:id', (req, res, next) => {
+    Product.findOne({
+        _id: req.params.id
+    }).then((product) => {
+        res.status(200).json({product: product});
     }).catch((err) => {
         res.status(400).json({err: err});
     });
@@ -68,18 +94,39 @@ app.put('/api/stuff/:id', (req, res, next) => {
     });
 });
 
+app.put('/api/products/:id', (req, res, next) => {
+    const product = new Product({
+        _id: req.params.id,
+        name: req.body.name,
+        description: req.body.description,
+        price: req.body.price,
+        inStock: req.body.inStock
+    });
+    Product.updateOne({_id: req.params.id}, product).then(() => {
+        res.status(201).json({message: 'Successfull update'});
+    }).catch((err) => {
+        res.status(400).json({err: err});
+    });
+});
+
 app.delete('/api/stuff/:id', (req, res, next) => {
     Thing.deleteOne({ _id: req.params.id }).then(
         () => {
-            res.status(200).json({
-                message: 'Deleted!'
-            });
+            res.status(200).json({message: 'Deleted!'});
         }
-    ).catch(
-        (err) => {
-            res.status(400).json({
-                err: err
-            });
+    ).catch((err) => {
+            res.status(400).json({err: err});
+        }
+    );
+});
+
+app.delete('/api/products/:id', (req, res, next) => {
+    Product.deleteOne({ _id: req.params.id }).then(
+        () => {
+            res.status(200).json({message: 'Deleted!'});
+        }
+    ).catch((err) => {
+            res.status(400).json({err: err});
         }
     );
 });
@@ -87,6 +134,14 @@ app.delete('/api/stuff/:id', (req, res, next) => {
 app.use('/api/stuff', (req, res, next) => {
     Thing.find().then((things) => {
         res.status(200).json(things);
+    }).catch((err) => {
+        res.status(400).json({err: err});
+    });
+});
+
+app.use('/api/products', (req, res, next) => {
+    Product.find().then((products) => {
+        res.status(200).json({products: products});
     }).catch((err) => {
         res.status(400).json({err: err});
     });
